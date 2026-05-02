@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#cecbbd" />
+  <meta name="apple-mobile-web-app-title" content="nepon (" />
+    <meta name="application-name" content="nepon (" />
+    <title>nepon (</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <main class="screen" id="mainScreen">
+    <div class="shell">
+      <div class="top-tools">
+        <button class="tool-button" id="openHelp" type="button" aria-label="Правила и FAQ"><span class="tool-settings"><span class="bar"><span class="dot"></span></span><span class="bar"><span class="dot alt"></span></span><span class="bar"><span class="dot"></span></span></span></button>
+        <button class="tool-button" id="openSettings" type="button" aria-label="Настройки"><span class="tool-settings"><span class="bar"><span class="dot"></span></span><span class="bar"><span class="dot alt"></span></span><span class="bar"><span class="dot"></span></span></span></button>
+      </div>
+      <section class="brand"><p class="brand-small">pon?</p><h1 class="brand-logo">nepon (</h1></section>
+      <section class="search-row"><label class="search-parent"><span class="search-lens" aria-hidden="true"></span><input class="search-input" id="searchInput" type="search" placeholder="Поиск категории..." /></label><button class="random-button" id="randomBtn" type="button" aria-label="Случайная категория"><span class="dice-wrap"><span class="dice one"></span><span class="dice two"><span class="pip"></span></span></span></button></section>
+      <section class="tabs"><button class="pill is-active" data-tab="all" type="button">Все</button><button class="pill" data-tab="recent" type="button">Недавно</button><button class="pill" data-tab="my" type="button">Мои</button></section>
+      <section class="cards-grid" id="cardsGrid"></section>
+    </div>
+  </main>
+
+  <main class="screen is-hidden" id="formScreen">
+    <div class="shell"><div class="form-header"><h2 class="form-title" id="formTitle">Добавить категорию</h2><button class="close-btn" id="closeForm" type="button" aria-label="Закрыть"></button></div>
+      <form class="form-blocks" id="categoryForm">
+        <label class="field-label" for="catName">Название категории</label><input class="field-box" id="catName" placeholder="Например: Мультфильмы" />
+        <label class="field-label" for="catDescription">Описание</label><input class="field-box" id="catDescription" placeholder="Описание для разворота карточки" />
+        <label class="field-label">Импорт</label><div class="import-row"><p class="import-note">Слова считаются через запятую или с новой строки.</p><label class="upload-btn" aria-label="Выбрать файл"><svg viewBox="0 0 24 24"><path d="M12 16V5"/><path d="M8 9L12 5L16 9"/><path d="M5 19H19"/></svg><input class="hidden-file" id="fileInput" type="file" accept=".txt,text/plain" /></label></div>
+        <label class="field-label" for="catWords">Ввод слов</label><textarea class="field-box" id="catWords" placeholder="Введите слова через запятую или каждое с новой строки..."></textarea>
+        <div class="form-actions"><button class="pill" type="submit">Сохранить</button><button class="pill" id="cancelForm" type="button">Назад</button></div>
+      </form>
+    </div>
+  </main>
+
+  <main class="screen game-screen is-hidden" id="gameScreen">
+    <div class="game-shell"><button class="game-center" id="pauseHitArea" type="button" aria-label="Пауза"><div><h2 class="game-word" id="gameWord"></h2><p class="pause-hint">Нажми на середину экрана, чтобы поставить на паузу</p></div></button><div class="game-bottom"><div class="timer-label"><span>Таймер</span><span id="timerText">0 сек.</span></div><div class="timer-track"><div class="timer-fill" id="timerFill"></div></div></div></div>
+  </main>
+
+  <main class="screen is-hidden" id="resultsScreen"><div class="results-shell"><h2 class="score-main" id="scoreMain">0/0</h2><p class="score-sub" id="scoreSub"></p><ul class="words-list-clean" id="resultsList"></ul><div class="results-actions"><button class="pill" id="resultsHome" type="button">Домой</button><button class="pill" id="resultsRestart" type="button">Сыграть ещё</button></div></div></main>
+
+  <div class="install-banner is-hidden" id="installBanner"><button class="install-banner-close" id="closeInstallBanner" type="button" aria-label="Закрыть подсказку"></button><p>Чтобы установить NEPON®, нажми <strong>«Поделиться»</strong> и выбери <strong>«На экран Домой»</strong>.</p></div>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer left" id="helpDrawer"><div class="drawer-head"><div><h3 class="drawer-title">Правила</h3><p class="drawer-brand">NEPON®</p></div><button class="close-btn" id="closeHelp" type="button" aria-label="Закрыть"></button></div><section class="drawer-section"><p class="faq-q">Как играть</p><p class="faq-a">Наклон вперёд  - угадал.</p><p class="faq-a">Наклон назад  - пропуск.</p></section><section class="drawer-section"><p class="faq-q">Пауза</p><p class="faq-a">Нажми на середину экрана во время игры.</p></section><section class="drawer-section"><p class="faq-q">FAQ</p><p class="faq-q">Как добавить свою категорию?</p><p class="faq-a">Открой раздел «Мои» и нажми «Добавить категорию».</p><p class="faq-q">Как вводить слова?</p><p class="faq-a">Через запятую или каждое слово с новой строки.</p><p class="faq-q">Можно импортировать .txt?</p><p class="faq-a">Да, через кнопку импорта на экране добавления категории.</p></section></aside>
+  <aside class="drawer right" id="settingsDrawer"><div class="drawer-head"><h3 class="drawer-title">Настройки</h3><button class="close-btn" id="closeSettings" type="button" aria-label="Закрыть"></button></div><section class="drawer-section"><p class="drawer-label">Время раунда</p><div class="time-grid" id="timeGrid"></div></section><section class="drawer-section"><div class="toggle-row"><span>Звук</span><button class="toggle" data-setting="sound" type="button"></button></div><div class="toggle-row"><span>Вибрация</span><button class="toggle" data-setting="vibration" type="button"></button></div><div class="toggle-row"><span>Наклон</span><button class="toggle" data-setting="tilt" type="button"></button></div><div class="toggle-row"><span>Свайпы</span><button class="toggle" data-setting="swipe" type="button"></button></div></section></aside>
+  <div class="countdown-overlay" id="countdown"><div class="countdown-center"><div class="count-number n3">3</div><div class="count-number n2">2</div><div class="count-number n1">1</div></div></div>
+  <div class="pause-overlay" id="pauseOverlay"><div class="pause-box"><h2 class="pause-title">Пауза</h2><button class="pause-btn" id="resumeBtn" type="button">Продолжить</button><button class="pause-btn" id="pauseHomeBtn" type="button">Вернуться домой</button></div></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
