@@ -9,7 +9,7 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
     const splitWords = value => String(value||'').split(/[\n;,]+/).map(w=>w.trim()).filter(Boolean);
     const toStorage = cat => { return { id:cat.id, name:cat.name, description:cat.description||'', words:[...(cat.words||[])] }; };
     const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
-    let state = { activeTab:'all', query:'', flippedId:null, editingId:null, categories:[], recent:[], roundTime:60, settings:{sound:false,vibration:true,tilt:true,swipe:false}, currentCategory:null, deck:[], currentWord:null, answers:[], score:0, timeLeft:60, timer:null, paused:false, blockRotation:false };
+    let state = { activeTab:'all', query:'', flippedId:null, editingId:null, categories:[], recent:[], roundTime:60, settings:{sound:false,vibration:true,tilt:true,swipe:false}, currentCategory:null, deck:[], currentWord:null, answers:[], score:0, timeLeft:60, timer:null, paused:false, blockRotation:false, tiltNeutralSign:null };
 
     const INSTALL_BANNER_KEY = 'nepon-install-banner-dismissed';
     const isTouchDevice = () => ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -105,7 +105,38 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
         return false;
       }
     }
-    window.addEventListener('deviceorientation', e=>{ if(!state.settings.tilt || $('#gameScreen').classList.contains('is-hidden') || state.paused) return; const gamma=e.gamma||0; if(Math.abs(gamma)<=30 && !state.blockRotation){ state.blockRotation=true; decide(gamma>=0?'correct':'skip'); } if(Math.abs(gamma)>=70) state.blockRotation=false; });
+    function getGameTiltValue(e) {
+  return Number.isFinite(e.gamma) ? e.gamma : 0;
+}
+
+function rememberTiltNeutral(gamma) {
+  if (Math.abs(gamma) >= 60) {
+    state.tiltNeutralSign = gamma >= 0 ? 1 : -1;
+  }
+}
+
+window.addEventListener('deviceorientation', e => {
+  if (!state.settings.tilt || $('#gameScreen').classList.contains('is-hidden') || state.paused) return;
+
+  const gamma = getGameTiltValue(e);
+
+  rememberTiltNeutral(gamma);
+
+  if (state.tiltNeutralSign === null) return;
+
+  if (Math.abs(gamma) <= 30 && !state.blockRotation) {
+    state.blockRotation = true;
+
+    const normalizedTilt = gamma * state.tiltNeutralSign;
+
+    decide(normalizedTilt >= 0 ? 'correct' : 'skip');
+  }
+
+  if (Math.abs(gamma) >= 70) {
+    state.blockRotation = false;
+    rememberTiltNeutral(gamma);
+  }
+});
     let touchStartX=0, touchStartY=0; window.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; },{passive:true}); window.addEventListener('touchend',e=>{ if(!state.settings.swipe || $('#gameScreen').classList.contains('is-hidden') || state.paused) return; const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; const dy=t.clientY-touchStartY; if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)) decide(dx>0?'correct':'skip'); },{passive:true});
     window.addEventListener('keydown',e=>{ if($('#gameScreen').classList.contains('is-hidden')||state.paused) return; if(e.key==='ArrowRight') decide('correct'); if(e.key==='ArrowLeft') decide('skip'); });
 
