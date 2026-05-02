@@ -8,6 +8,8 @@
     <meta name="application-name" content="nepon (" />
     <title>nepon (</title>
   <link rel="stylesheet" href="/src/styles.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/images/favicon.png" />
 </head>
 <body>
   <main class="screen" id="mainScreen">
@@ -48,6 +50,7 @@
   <aside class="drawer right" id="settingsDrawer"><div class="drawer-head"><h3 class="drawer-title">Настройки</h3><button class="close-btn" id="closeSettings" type="button" aria-label="Закрыть"></button></div><section class="drawer-section"><p class="drawer-label">Время раунда</p><div class="time-grid" id="timeGrid"></div></section><section class="drawer-section"><div class="toggle-row"><span>Звук</span><button class="toggle" data-setting="sound" type="button"></button></div><div class="toggle-row"><span>Вибрация</span><button class="toggle" data-setting="vibration" type="button"></button></div><div class="toggle-row"><span>Наклон</span><button class="toggle" data-setting="tilt" type="button"></button></div><div class="toggle-row"><span>Свайпы</span><button class="toggle" data-setting="swipe" type="button"></button></div></section></aside>
   <div class="countdown-overlay" id="countdown"><div class="countdown-center"><div class="count-number n3">3</div><div class="count-number n2">2</div><div class="count-number n1">1</div></div></div>
   <div class="pause-overlay" id="pauseOverlay"><div class="pause-box"><h2 class="pause-title">Пауза</h2><button class="pause-btn" id="resumeBtn" type="button">Продолжить</button><button class="pause-btn" id="pauseHomeBtn" type="button">Вернуться домой</button></div></div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

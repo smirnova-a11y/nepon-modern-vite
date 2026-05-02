@@ -1,6 +1,7 @@
-# NEPON Headsup — modern Vite version
+# NEPON — modern Vite version
 
-Это современная версия текущего статического `dist` без старых зависимостей `react-scripts`, `firebase`, `grpc`, `node-sass`.
+Это безопасная современная версия, собранная из текущего готового `dist`.
+Дизайн и логика сохранены: категории, игра, настройки, localStorage, свайпы/наклон и импорт слов перенесены из текущего `index.html`.
 
 ## Запуск локально
 
@@ -9,24 +10,28 @@ npm install
 npm run dev
 ```
 
+Открой адрес, который покажет Vite, обычно: `http://localhost:5173`.
+
 ## Сборка
 
 ```bash
 npm run build
 ```
 
-Готовая папка для Cloudflare Pages появится здесь:
+Готовая папка появится здесь:
 
 ```txt
 dist
 ```
 
-## Деплой на Cloudflare Pages через Wrangler
+## Деплой на Cloudflare Pages
+
+Требуется Node 20+ для Wrangler:
 
 ```bash
 nvm use 20
-npx wrangler login
+npm run build
 npx wrangler pages deploy dist --project-name nepon-headsup
 ```
 
-Дизайн и логика взяты из присланного `dist/index.html`, код только разложен на `src/styles.css` и `src/main.js`.
+Важно: для Cloudflare загружай именно собранную папку `dist`, а не весь проект.

@@ -58,7 +58,7 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
       el.addEventListener('click',()=>{ const wasOpen=state.flippedId===cat.id; $$('.category-card.is-flipped').forEach(card=>card.classList.remove('is-flipped')); state.flippedId = wasOpen ? null : cat.id; if(!wasOpen) el.classList.add('is-flipped'); });
       el.querySelector('.delete').addEventListener('click',e=>{ e.stopPropagation(); deleteCategory(cat); });
       el.querySelector('.edit').addEventListener('click',e=>{ e.stopPropagation(); openForm(cat); });
-      el.querySelector('.start-btn').addEventListener('click',e=>{ e.stopPropagation(); if(cat.words.length) startCategory(cat); });
+      el.querySelector('.start-btn').addEventListener('click', async e=>{ e.stopPropagation(); if(cat.words.length) await startCategory(cat); });
       return el; }
     function escapeHtml(str) { return String(str).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
     function deleteCategory(cat) { if(!confirm(`Удалить категорию «${cat.name}»?`)) return; state.categories=state.categories.filter(c=>c.id!==cat.id); state.recent=state.recent.filter(id=>id!==cat.id); if(!cat.isCustom){ const deleted=safeParse(KEYS.deleted,[]); saveJson(KEYS.deleted,[...new Set([...deleted,cat.id])]); } saveCustom(); saveOverrides(); saveRecent(); state.flippedId=null; renderCards(); }
@@ -70,9 +70,9 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
     function renderToggles() { $$('.toggle').forEach(btn=>{ const key=btn.dataset.setting; btn.classList.toggle('is-on', !!state.settings[key]); }); }
     function openDrawer(which) { $('#drawerOverlay').classList.add('is-active'); $('#helpDrawer').classList.toggle('is-active', which==='help'); $('#settingsDrawer').classList.toggle('is-active', which==='settings'); }
     function closeDrawers() { $('#drawerOverlay').classList.remove('is-active'); $('#helpDrawer').classList.remove('is-active'); $('#settingsDrawer').classList.remove('is-active'); }
-    function startCategory(cat) { state.currentCategory={...cat, words:[...cat.words]}; rememberRecent(cat); state.deck=shuffle(cat.words); state.answers=[]; state.score=0; state.timeLeft=state.roundTime; state.currentWord=null; state.flippedId=null; runCountdown(()=>beginGame()); }
+    async function startCategory(cat, askTiltPermission=true) { const canUseTilt = askTiltPermission ? await requestOrientationPermission() : true; state.currentCategory={...cat, words:[...cat.words]}; rememberRecent(cat); state.deck=shuffle(cat.words); state.answers=[]; state.score=0; state.timeLeft=state.roundTime; state.currentWord=null; state.flippedId=null; if(!canUseTilt) state.settings.tilt=false; renderToggles(); runCountdown(()=>beginGame()); }
     function runCountdown(done) { $('#countdown').classList.remove('is-active'); void $('#countdown').offsetWidth; $('#countdown').classList.add('is-active'); setTimeout(()=>{ $('#countdown').classList.remove('is-active'); done(); },3100); }
-    function beginGame() { state.paused=false; show('#gameScreen'); nextWord(); updateTimer(); clearInterval(state.timer); state.timer=setInterval(()=>{ if(state.paused) return; state.timeLeft-=1; updateTimer(); if(state.timeLeft<=0) finishRound(true); },1000); requestOrientationPermission(); }
+    function beginGame() { state.paused=false; show('#gameScreen'); nextWord(); updateTimer(); clearInterval(state.timer); state.timer=setInterval(()=>{ if(state.paused) return; state.timeLeft-=1; updateTimer(); if(state.timeLeft<=0) finishRound(true); },1000); }
     function nextWord() { if(!state.deck.length) return finishRound(false); state.currentWord=state.deck.shift(); $('#gameWord').textContent=state.currentWord; }
     function decide(status) { if($('#gameScreen').classList.contains('is-hidden')||state.paused||!state.currentWord) return; state.answers.push({name:state.currentWord,status}); if(status==='correct') state.score+=1; const g=$('#gameScreen'); g.classList.remove('correct','skip'); void g.offsetWidth; g.classList.add(status==='correct'?'correct':'skip'); if(state.settings.vibration && navigator.vibrate) navigator.vibrate(status==='correct'?35:25); setTimeout(()=>{ g.classList.remove('correct','skip'); nextWord(); },360); }
     function updateTimer() { const pct=Math.max(0,Math.min(100,(state.timeLeft/state.roundTime)*100)); $('#timerFill').style.width=pct+'%'; $('#timerText').textContent=`${state.timeLeft} сек.`; }
@@ -81,7 +81,30 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
     function pauseGame() { if($('#gameScreen').classList.contains('is-hidden')) return; state.paused=true; $('#pauseOverlay').classList.add('is-active'); }
     function resumeGame() { state.paused=false; $('#pauseOverlay').classList.remove('is-active'); }
     function goHome() { clearInterval(state.timer); state.timer=null; state.paused=false; $('#pauseOverlay').classList.remove('is-active'); show('#mainScreen'); renderCards(); }
-    function requestOrientationPermission() { if(!state.settings.tilt) return; const D=window.DeviceOrientationEvent; if(D && typeof D.requestPermission==='function') { D.requestPermission().catch(()=>{}); } }
+    async function requestOrientationPermission() {
+      if(!state.settings.tilt) return true;
+      const D = window.DeviceOrientationEvent;
+      const M = window.DeviceMotionEvent;
+      try {
+        if(D && typeof D.requestPermission === 'function') {
+          const result = await D.requestPermission();
+          if(result !== 'granted') {
+            alert('Доступ к наклону не разрешён. Можно играть свайпами или стрелками.');
+            return false;
+          }
+        } else if(M && typeof M.requestPermission === 'function') {
+          const result = await M.requestPermission();
+          if(result !== 'granted') {
+            alert('Доступ к наклону не разрешён. Можно играть свайпами или стрелками.');
+            return false;
+          }
+        }
+        return true;
+      } catch(e) {
+        alert('Не удалось запросить доступ к наклону. Можно играть свайпами или стрелками.');
+        return false;
+      }
+    }
     window.addEventListener('deviceorientation', e=>{ if(!state.settings.tilt || $('#gameScreen').classList.contains('is-hidden') || state.paused) return; const gamma=e.gamma||0; if(Math.abs(gamma)<=30 && !state.blockRotation){ state.blockRotation=true; decide(gamma>=0?'correct':'skip'); } if(Math.abs(gamma)>=70) state.blockRotation=false; });
     let touchStartX=0, touchStartY=0; window.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; },{passive:true}); window.addEventListener('touchend',e=>{ if(!state.settings.swipe || $('#gameScreen').classList.contains('is-hidden') || state.paused) return; const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; const dy=t.clientY-touchStartY; if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)) decide(dx>0?'correct':'skip'); },{passive:true});
     window.addEventListener('keydown',e=>{ if($('#gameScreen').classList.contains('is-hidden')||state.paused) return; if(e.key==='ArrowRight') decide('correct'); if(e.key==='ArrowLeft') decide('skip'); });
@@ -90,11 +113,19 @@ const BUILTIN = [{ id:'built-in-disney', name:'Герои Disney', description:'
       $('#openHelp').onclick=()=>openDrawer('help'); $('#openSettings').onclick=()=>{ renderTimeGrid(); renderToggles(); openDrawer('settings'); }; $('#closeHelp').onclick=closeDrawers; $('#closeSettings').onclick=closeDrawers; $('#drawerOverlay').onclick=closeDrawers;
       $$('.tabs .pill').forEach(b=>b.onclick=()=>{ state.activeTab=b.dataset.tab; state.query=''; $('#searchInput').value=''; state.flippedId=null; renderTabs(); renderCards(); });
       $('#searchInput').oninput=e=>{ state.query=e.target.value; state.flippedId=null; renderCards(); };
-      $('#randomBtn').onclick=()=>{ const btn=$('#randomBtn'); const cats=currentCategories().filter(c=>c.words.length); if(!cats.length || btn.classList.contains('is-dice-animating')) return; const cat=cats[Math.floor(Math.random()*cats.length)]; btn.classList.add('is-dice-animating'); setTimeout(()=>{ btn.classList.remove('is-dice-animating'); startCategory(cat); }, 320); };
+      $('#randomBtn').onclick=async ()=>{ const btn=$('#randomBtn'); const cats=currentCategories().filter(c=>c.words.length); if(!cats.length || btn.classList.contains('is-dice-animating')) return; const cat=cats[Math.floor(Math.random()*cats.length)]; const canUseTilt = await requestOrientationPermission(); if(!canUseTilt) { state.settings.tilt=false; renderToggles(); } btn.classList.add('is-dice-animating'); setTimeout(()=>{ btn.classList.remove('is-dice-animating'); startCategory(cat, false); }, 320); };
       $('#closeForm').onclick=closeForm; $('#cancelForm').onclick=closeForm; $('#categoryForm').onsubmit=saveForm; $('#fileInput').onchange=e=>{ const file=e.target.files&&e.target.files[0]; if(!file) return; const r=new FileReader(); r.onload=()=>{ const imported=splitWords(r.result).join('\n'); $('#catWords').value=[$('#catWords').value.trim(), imported].filter(Boolean).join('\n'); }; r.readAsText(file,'UTF-8'); };
       $$('.toggle').forEach(btn=>btn.onclick=()=>{ const key=btn.dataset.setting; state.settings[key]=!state.settings[key]; localStorage.setItem(KEYS[key], String(state.settings[key])); renderToggles(); });
-      $('#pauseHitArea').onclick=pauseGame; $('#resumeBtn').onclick=resumeGame; $('#pauseHomeBtn').onclick=goHome; $('#resultsHome').onclick=goHome; $('#resultsRestart').onclick=()=>state.currentCategory&&startCategory(state.currentCategory); const installClose = $('#closeInstallBanner'); if (installClose) installClose.onclick=dismissInstallBanner;
+      $('#pauseHitArea').onclick=pauseGame; $('#resumeBtn').onclick=resumeGame; $('#pauseHomeBtn').onclick=goHome; $('#resultsHome').onclick=goHome; $('#resultsRestart').onclick=async ()=>state.currentCategory&&await startCategory(state.currentCategory); const installClose = $('#closeInstallBanner'); if (installClose) installClose.onclick=dismissInstallBanner;
     }
     window.addEventListener('resize', ()=>{ updateForceLandscape(); updateInstallBanner(); });
     window.addEventListener('orientationchange', ()=>{ updateForceLandscape(); updateInstallBanner(); });
     load(); bind(); renderTabs(); renderCards(); renderTimeGrid(); renderToggles(); updateForceLandscape(); updateInstallBanner();
+
+
+// PWA: register the lightweight service worker from /public/sw.js when supported.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
